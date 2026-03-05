@@ -70,28 +70,37 @@ export async function createLibrarySendAndConfirm(
 // ---------- add_book ----------
 
 export function addBookBuilder(
-  _owner: PublicKey,
+  owner: PublicKey,
   args: { name: string; pages: number },
-  _remainingAccounts: {
+  remainingAccounts: {
     pubkey: PublicKey;
     isSigner: boolean;
     isWritable: boolean;
   }[] = [],
-): MockMethodsBuilder {
-  void _owner;
-  void args;
-  return mockBuilder();
+) {
+  const prog = getProgram();
+  if (!prog)
+    throw new Error(
+      'Program not initialized. Call initializeClient(provider) first.',
+    );
+  const [library] = deriveLibraryPDA(owner);
+  return prog.methods
+    .addBook(args.name, args.pages)
+    .accountsStrict({
+      owner,
+      library,
+    })
+    .remainingAccounts(remainingAccounts);
 }
 
 export async function addBookSendAndConfirm(
-  _owner: PublicKey,
+  owner: PublicKey,
   args: { name: string; pages: number },
-  _preInstructions: TransactionInstruction[] = [],
+  preInstructions: TransactionInstruction[] = [],
 ): Promise<string> {
-  void _owner;
-  void args;
-  void _preInstructions;
-  return addBookBuilder(_owner, args).rpc();
+  return addBookBuilder(owner, args)
+    .preInstructions(preInstructions)
+    .rpc();
 }
 
 // ---------- remove_book ----------

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useConnection, useWallet } from '@solana/wallet-adapter-react';
 import { AnchorProvider } from '@coral-xyz/anchor';
 import { initializeClient } from './solana/client';
-import { useLibrary, useCreateLibrary } from './hooks';
+import { useLibrary, useCreateLibrary, useAddBook } from './hooks';
 import type { Library } from './types/library';
 import type { ActionContext } from './solana/shared/types';
 import { NoLibraryView } from './components/NoLibraryView';
@@ -58,6 +58,7 @@ function App() {
     isPending,
     error: createError,
   } = useCreateLibrary(actionContext);
+  const { addBook, isPending: addBookPending, error: addBookError } = useAddBook(actionContext);
 
   const handleCreateLibraryOnChain = useCallback(
     async (library: Library) => {
@@ -78,6 +79,14 @@ function App() {
       setSelectedIndex(localLibraries.length);
     },
     [localLibraries.length],
+  );
+
+  const handleAddBookOnChain = useCallback(
+    async (name: string, pages: number) => {
+      await addBook({ name, pages });
+      await refetch();
+    },
+    [addBook, refetch],
   );
 
   const handleLibraryChange = useCallback(
@@ -115,8 +124,11 @@ function App() {
           hasLibraryFromChain && chainLibraryAsLibrary ? (
             <LibraryView
               library={chainLibraryAsLibrary}
-              onLibraryChange={() => refetch()}
+              onLibraryChange={() => {}}
               onBackToLibraries={() => {}}
+              onAddBookChain={handleAddBookOnChain}
+              addBookPending={addBookPending}
+              addBookError={addBookError}
             />
           ) : (
             <NoLibraryView

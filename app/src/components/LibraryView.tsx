@@ -10,19 +10,34 @@ interface LibraryViewProps {
   library: Library;
   onLibraryChange: (library: Library) => void;
   onBackToLibraries: () => void;
+  /** When provided, add book is sent on-chain and library is refetched by the parent. */
+  onAddBookChain?: (name: string, pages: number) => void | Promise<void>;
+  addBookPending?: boolean;
+  addBookError?: Error | null;
 }
 
-export function LibraryView({ library, onLibraryChange, onBackToLibraries }: LibraryViewProps) {
+export function LibraryView({
+  library,
+  onLibraryChange,
+  onBackToLibraries,
+  onAddBookChain,
+  addBookPending = false,
+  addBookError = null,
+}: LibraryViewProps) {
   const [confirmRemove, setConfirmRemove] = useState<string | null>(null);
 
   const handleAddBook = useCallback(
     (name: string, pages: number) => {
+      if (onAddBookChain) {
+        onAddBookChain(name, pages);
+        return;
+      }
       onLibraryChange({
         ...library,
         books: [...library.books, { name, pages, available: true }],
       });
     },
-    [library, onLibraryChange]
+    [library, onLibraryChange, onAddBookChain],
   );
 
   const handleRemoveBook = useCallback(
@@ -51,6 +66,7 @@ export function LibraryView({ library, onLibraryChange, onBackToLibraries }: Lib
   const requestRemove = useCallback((name: string) => setConfirmRemove(name), []);
 
   const atMaxBooks = library.books.length >= MAX_BOOKS;
+  const addFormDisabled = atMaxBooks || addBookPending;
 
   return (
     <div className="library-view">
@@ -62,12 +78,17 @@ export function LibraryView({ library, onLibraryChange, onBackToLibraries }: Lib
         ← Back to libraries
       </button>
       <LibraryHeader name={library.name} />
+      {addBookError && (
+        <p className="form-error" role="alert">
+          {addBookError.message}
+        </p>
+      )}
       <BookList
         books={library.books}
         onToggleAvailability={handleToggleAvailability}
         onRemove={requestRemove}
       />
-      <AddBookForm onAdd={handleAddBook} disabled={atMaxBooks} />
+      <AddBookForm onAdd={handleAddBook} disabled={addFormDisabled} />
       {confirmRemove !== null && (
         <ConfirmDialog
           title="Remove book?"
