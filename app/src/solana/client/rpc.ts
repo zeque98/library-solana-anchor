@@ -4,31 +4,9 @@ import {
   SystemProgram,
   TransactionInstruction,
 } from '@solana/web3.js';
-import { Buffer } from 'buffer';
-import { LIBRARY_PROGRAM_ID } from '../shared/constants';
 import type { Book, LibraryAccount } from '../shared/types';
 import { getProgram } from './program';
 import { deriveLibraryPDA } from './pda';
-
-/** Mock builder for instructions not yet implemented (add_book, remove_book, etc.). */
-interface MockMethodsBuilder {
-  rpc(): Promise<string>;
-  instruction(): Promise<TransactionInstruction>;
-}
-
-function mockBuilder(rpcSig = 'mock-signature'): MockMethodsBuilder {
-  return {
-    rpc: () => Promise.resolve(rpcSig),
-    instruction: () =>
-      Promise.resolve(
-        new TransactionInstruction({
-          keys: [],
-          programId: LIBRARY_PROGRAM_ID,
-          data: Buffer.from([]),
-        }),
-      ),
-  };
-}
 
 // ---------- create_library ----------
 
@@ -137,21 +115,6 @@ export async function removeBookSendAndConfirm(
   return removeBookBuilder(owner, args)
     .preInstructions(preInstructions)
     .rpc();
-}
-
-// ---------- view_books (read-only; use getLibrary for UI) ----------
-
-export function viewBooksBuilder(
-  _owner: PublicKey,
-  remainingAccounts: {
-    pubkey: PublicKey;
-    isSigner: boolean;
-    isWritable: boolean;
-  }[] = [],
-): MockMethodsBuilder {
-  void _owner;
-  void remainingAccounts;
-  return mockBuilder();
 }
 
 // ---------- toggle_availability ----------

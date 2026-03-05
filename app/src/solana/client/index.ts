@@ -5,7 +5,6 @@ export {
   addBookSendAndConfirm,
   removeBookBuilder,
   removeBookSendAndConfirm,
-  viewBooksBuilder,
   toggleAvailabilityBuilder,
   toggleAvailabilitySendAndConfirm,
   getLibrary,
