@@ -1,4 +1,5 @@
 export { useLibrary, type UseLibraryResult } from "./useLibrary";
+export { useConnectionStatus, type ConnectionStatusResult } from "./useConnectionStatus";
 export { useCreateLibrary, type UseCreateLibraryResult } from "./useCreateLibrary";
 export { useAddBook, type UseAddBookResult } from "./useAddBook";
 export { useRemoveBook, type UseRemoveBookResult } from "./useRemoveBook";

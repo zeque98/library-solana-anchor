@@ -10,5 +10,6 @@ export {
   toggleAvailabilitySendAndConfirm,
   getLibrary,
   listLibrariesByOwner,
-} from "./rpc";
-export { deriveLibraryPDA } from "./pda";
+} from './rpc';
+export { deriveLibraryPDA } from './pda';
+export { initializeClient, getProgram, getProvider } from './program';
