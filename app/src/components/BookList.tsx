@@ -5,9 +5,16 @@ interface BookListProps {
   books: Book[];
   onToggleAvailability: (name: string) => void;
   onRemove: (name: string) => void;
+  /** When true, toggle and remove buttons are disabled (e.g. while a chain mutation is pending). */
+  disabled?: boolean;
 }
 
-export function BookList({ books, onToggleAvailability, onRemove }: BookListProps) {
+export function BookList({
+  books,
+  onToggleAvailability,
+  onRemove,
+  disabled = false,
+}: BookListProps) {
   if (books.length === 0) {
     return (
       <div className="book-list-empty">
@@ -25,6 +32,7 @@ export function BookList({ books, onToggleAvailability, onRemove }: BookListProp
             book={book}
             onToggleAvailability={onToggleAvailability}
             onRemove={onRemove}
+            disabled={disabled}
           />
         </li>
       ))}

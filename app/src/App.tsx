@@ -2,7 +2,13 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useConnection, useWallet } from '@solana/wallet-adapter-react';
 import { AnchorProvider } from '@coral-xyz/anchor';
 import { initializeClient } from './solana/client';
-import { useLibrary, useCreateLibrary, useAddBook } from './hooks';
+import {
+  useLibrary,
+  useCreateLibrary,
+  useAddBook,
+  useRemoveBook,
+  useToggleAvailability,
+} from './hooks';
 import type { Library } from './types/library';
 import type { ActionContext } from './solana/shared/types';
 import { NoLibraryView } from './components/NoLibraryView';
@@ -59,6 +65,13 @@ function App() {
     error: createError,
   } = useCreateLibrary(actionContext);
   const { addBook, isPending: addBookPending, error: addBookError } = useAddBook(actionContext);
+  const { removeBook, isPending: removeBookPending, error: removeBookError } =
+    useRemoveBook(actionContext);
+  const {
+    toggleAvailability,
+    isPending: toggleAvailabilityPending,
+    error: toggleAvailabilityError,
+  } = useToggleAvailability(actionContext);
 
   const handleCreateLibraryOnChain = useCallback(
     async (library: Library) => {
@@ -87,6 +100,22 @@ function App() {
       await refetch();
     },
     [addBook, refetch],
+  );
+
+  const handleRemoveBookOnChain = useCallback(
+    async (name: string) => {
+      await removeBook({ name });
+      await refetch();
+    },
+    [removeBook, refetch],
+  );
+
+  const handleToggleAvailabilityOnChain = useCallback(
+    async (name: string) => {
+      await toggleAvailability({ name });
+      await refetch();
+    },
+    [toggleAvailability, refetch],
   );
 
   const handleLibraryChange = useCallback(
@@ -129,6 +158,12 @@ function App() {
               onAddBookChain={handleAddBookOnChain}
               addBookPending={addBookPending}
               addBookError={addBookError}
+              onRemoveBookChain={handleRemoveBookOnChain}
+              removeBookPending={removeBookPending}
+              removeBookError={removeBookError}
+              onToggleAvailabilityChain={handleToggleAvailabilityOnChain}
+              toggleAvailabilityPending={toggleAvailabilityPending}
+              toggleAvailabilityError={toggleAvailabilityError}
             />
           ) : (
             <NoLibraryView

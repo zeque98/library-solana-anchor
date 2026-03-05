@@ -106,69 +106,88 @@ export async function addBookSendAndConfirm(
 // ---------- remove_book ----------
 
 export function removeBookBuilder(
-  _owner: PublicKey,
+  owner: PublicKey,
   args: { name: string },
-  _remainingAccounts: {
+  remainingAccounts: {
     pubkey: PublicKey;
     isSigner: boolean;
     isWritable: boolean;
   }[] = [],
-): MockMethodsBuilder {
-  void _owner;
-  void args;
-  return mockBuilder();
+) {
+  const prog = getProgram();
+  if (!prog)
+    throw new Error(
+      'Program not initialized. Call initializeClient(provider) first.',
+    );
+  const [library] = deriveLibraryPDA(owner);
+  return prog.methods
+    .removeBook(args.name)
+    .accountsStrict({
+      owner,
+      library,
+    })
+    .remainingAccounts(remainingAccounts);
 }
 
 export async function removeBookSendAndConfirm(
-  _owner: PublicKey,
+  owner: PublicKey,
   args: { name: string },
-  _preInstructions: TransactionInstruction[] = [],
+  preInstructions: TransactionInstruction[] = [],
 ): Promise<string> {
-  void _owner;
-  void args;
-  void _preInstructions;
-  return removeBookBuilder(_owner, args).rpc();
+  return removeBookBuilder(owner, args)
+    .preInstructions(preInstructions)
+    .rpc();
 }
 
 // ---------- view_books (read-only; use getLibrary for UI) ----------
 
 export function viewBooksBuilder(
   _owner: PublicKey,
-  _remainingAccounts: {
+  remainingAccounts: {
     pubkey: PublicKey;
     isSigner: boolean;
     isWritable: boolean;
   }[] = [],
 ): MockMethodsBuilder {
   void _owner;
+  void remainingAccounts;
   return mockBuilder();
 }
 
 // ---------- toggle_availability ----------
 
 export function toggleAvailabilityBuilder(
-  _owner: PublicKey,
+  owner: PublicKey,
   args: { name: string },
-  _remainingAccounts: {
+  remainingAccounts: {
     pubkey: PublicKey;
     isSigner: boolean;
     isWritable: boolean;
   }[] = [],
-): MockMethodsBuilder {
-  void _owner;
-  void args;
-  return mockBuilder();
+) {
+  const prog = getProgram();
+  if (!prog)
+    throw new Error(
+      'Program not initialized. Call initializeClient(provider) first.',
+    );
+  const [library] = deriveLibraryPDA(owner);
+  return prog.methods
+    .toggleAvailability(args.name)
+    .accountsStrict({
+      owner,
+      library,
+    })
+    .remainingAccounts(remainingAccounts);
 }
 
 export async function toggleAvailabilitySendAndConfirm(
-  _owner: PublicKey,
+  owner: PublicKey,
   args: { name: string },
-  _preInstructions: TransactionInstruction[] = [],
+  preInstructions: TransactionInstruction[] = [],
 ): Promise<string> {
-  void _owner;
-  void args;
-  void _preInstructions;
-  return toggleAvailabilityBuilder(_owner, args).rpc();
+  return toggleAvailabilityBuilder(owner, args)
+    .preInstructions(preInstructions)
+    .rpc();
 }
 
 // ---------- Read-only: getLibrary ----------
