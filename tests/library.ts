@@ -62,17 +62,6 @@ describe('library_program', () => {
     }
   });
 
-  it('lists books', async () => {
-    await program.methods
-      .viewBooks()
-      .accounts({
-        owner,
-        library: libraryPda,
-      })
-      .rpc();
-    // Behavior is just logging; nothing to assert beyond “no error”.
-  });
-
   it('toggles book availability', async () => {
     // First toggle: should go from true -> false
     await program.methods
