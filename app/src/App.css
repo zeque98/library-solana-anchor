@@ -1,3 +1,30 @@
+/* App shell and header */
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+}
+
+.app-title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.wallet-connect {
+  display: flex;
+  align-items: center;
+}
+
 /* App layout */
 .app {
   width: 100%;
@@ -5,6 +32,7 @@
   margin: 0 auto;
   padding: 2rem;
   text-align: left;
+  flex: 1;
 }
 
 /* No library / Create library */
