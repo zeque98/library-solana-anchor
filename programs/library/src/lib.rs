@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-declare_id!("AsZk6fFrrsYFpoZxCaAW1JGn9wHLVtnXvxh6feCZzUCf");
+declare_id!("97p8D5pjdWFcq25FcPgEEQaLvfk48HrYFuqZzihUCpto");
 
 /// Program module that exposes the on-chain instructions.
 #[program]
