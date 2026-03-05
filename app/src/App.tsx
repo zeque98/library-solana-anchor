@@ -3,6 +3,7 @@ import type { Library } from './types/library';
 import { NoLibraryView } from './components/NoLibraryView';
 import { LibrariesListView } from './components/LibrariesListView';
 import { LibraryView } from './components/LibraryView';
+import { WalletConnect } from './components/WalletConnect';
 import './App.css';
 
 function App() {
@@ -31,7 +32,12 @@ function App() {
   const selectedLibrary = selectedIndex !== null ? libraries[selectedIndex] : null;
 
   return (
-    <div className="app">
+    <div className="app-shell">
+      <header className="app-header">
+        <h1 className="app-title">Library</h1>
+        <WalletConnect />
+      </header>
+      <div className="app">
       {libraries.length === 0 ? (
         <NoLibraryView onCreateLibrary={handleCreateFirstLibrary} />
       ) : selectedIndex !== null && selectedLibrary ? (
@@ -47,6 +53,7 @@ function App() {
           onCreateLibrary={handleCreateLibrary}
         />
       )}
+      </div>
     </div>
   );
 }
