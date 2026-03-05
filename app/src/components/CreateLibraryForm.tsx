@@ -4,16 +4,18 @@ import type { Library } from '../types/library';
 import { MAX_NAME_LEN } from '../types/library';
 
 interface CreateLibraryFormProps {
-  onSubmit: (library: Library) => void;
+  onSubmit: (library: Library) => void | Promise<void>;
   /** Optional intro text above the form (e.g. for "Add a new library" flow). */
   intro?: string;
+  isPending?: boolean;
+  submitError?: Error | null;
 }
 
-export function CreateLibraryForm({ onSubmit, intro }: CreateLibraryFormProps) {
+export function CreateLibraryForm({ onSubmit, intro, isPending = false, submitError = null }: CreateLibraryFormProps) {
   const [name, setName] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
     const trimmed = name.trim();
@@ -25,7 +27,7 @@ export function CreateLibraryForm({ onSubmit, intro }: CreateLibraryFormProps) {
       setError(`Name must be at most ${MAX_NAME_LEN} characters.`);
       return;
     }
-    onSubmit({ name: trimmed, books: [] });
+    await onSubmit({ name: trimmed, books: [] });
   };
 
   return (
@@ -51,7 +53,14 @@ export function CreateLibraryForm({ onSubmit, intro }: CreateLibraryFormProps) {
             {error}
           </p>
         )}
-        <button type="submit">Create library</button>
+        {submitError && (
+          <p className="form-error" role="alert">
+            {submitError.message}
+          </p>
+        )}
+        <button type="submit" disabled={isPending}>
+          {isPending ? 'Creating…' : 'Create library'}
+        </button>
       </form>
     </div>
   );

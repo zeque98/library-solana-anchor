@@ -1,58 +1,149 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useConnection, useWallet } from '@solana/wallet-adapter-react';
+import { AnchorProvider } from '@coral-xyz/anchor';
+import { initializeClient } from './solana/client';
+import { useLibrary, useCreateLibrary } from './hooks';
 import type { Library } from './types/library';
+import type { ActionContext } from './solana/shared/types';
 import { NoLibraryView } from './components/NoLibraryView';
 import { LibrariesListView } from './components/LibrariesListView';
 import { LibraryView } from './components/LibraryView';
 import { WalletConnect } from './components/WalletConnect';
+import { ConnectionStatusBar } from './components/ConnectionStatusBar';
 import './App.css';
 
 function App() {
-  const [libraries, setLibraries] = useState<Library[]>([]);
+  const { connection } = useConnection();
+  const wallet = useWallet();
+  const [localLibraries, setLocalLibraries] = useState<Library[]>([]);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
-  const handleCreateFirstLibrary = (library: Library) => {
-    setLibraries([library]);
+  const actionContext = useMemo<ActionContext | null>(
+    () =>
+      connection && wallet.publicKey
+        ? { connection, walletPubKey: wallet.publicKey }
+        : null,
+    [connection, wallet.publicKey],
+  );
+
+  useEffect(() => {
+    if (
+      connection &&
+      wallet.publicKey &&
+      wallet.signTransaction &&
+      wallet.signAllTransactions
+    ) {
+      const provider = new AnchorProvider(
+        connection,
+        {
+          publicKey: wallet.publicKey,
+          signTransaction: wallet.signTransaction.bind(wallet),
+          signAllTransactions: wallet.signAllTransactions!.bind(wallet),
+        },
+        { commitment: 'confirmed' },
+      );
+      initializeClient(provider);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    connection,
+    wallet.publicKey,
+    wallet.signTransaction,
+    wallet.signAllTransactions,
+  ]);
+
+  const { library: libraryFromChain, refetch } = useLibrary(actionContext);
+  const {
+    createLibrary,
+    isPending,
+    error: createError,
+  } = useCreateLibrary(actionContext);
+
+  const handleCreateLibraryOnChain = useCallback(
+    async (library: Library) => {
+      await createLibrary({ name: library.name });
+      await refetch();
+    },
+    [createLibrary, refetch],
+  );
+
+  const handleCreateFirstLibraryLocal = useCallback((library: Library) => {
+    setLocalLibraries([library]);
     setSelectedIndex(0);
-  };
+  }, []);
 
-  const handleCreateLibrary = (library: Library) => {
-    setLibraries((prev) => [...prev, library]);
-    setSelectedIndex(libraries.length);
-  };
+  const handleCreateLibraryLocal = useCallback(
+    (library: Library) => {
+      setLocalLibraries((prev) => [...prev, library]);
+      setSelectedIndex(localLibraries.length);
+    },
+    [localLibraries.length],
+  );
 
-  const handleLibraryChange = (library: Library) => {
-    if (selectedIndex === null) return;
-    setLibraries((prev) => {
-      const next = [...prev];
-      next[selectedIndex] = library;
-      return next;
-    });
-  };
+  const handleLibraryChange = useCallback(
+    (library: Library) => {
+      if (selectedIndex === null) return;
+      setLocalLibraries((prev) => {
+        const next = [...prev];
+        next[selectedIndex] = library;
+        return next;
+      });
+    },
+    [selectedIndex],
+  );
 
-  const selectedLibrary = selectedIndex !== null ? libraries[selectedIndex] : null;
+  const selectedLibrary =
+    selectedIndex !== null ? localLibraries[selectedIndex] ?? null : null;
+
+  const hasWallet = !!wallet.publicKey;
+  const hasLibraryFromChain = libraryFromChain !== null;
+  const chainLibraryAsLibrary: Library | null = libraryFromChain
+    ? { name: libraryFromChain.name, books: libraryFromChain.books }
+    : null;
 
   return (
     <div className="app-shell">
       <header className="app-header">
-        <h1 className="app-title">Library</h1>
-        <WalletConnect />
+        <div className="app-header-main">
+          <h1 className="app-title">Library</h1>
+          <WalletConnect />
+        </div>
+        <ConnectionStatusBar />
       </header>
       <div className="app">
-      {libraries.length === 0 ? (
-        <NoLibraryView onCreateLibrary={handleCreateFirstLibrary} />
-      ) : selectedIndex !== null && selectedLibrary ? (
-        <LibraryView
-          library={selectedLibrary}
-          onLibraryChange={handleLibraryChange}
-          onBackToLibraries={() => setSelectedIndex(null)}
-        />
-      ) : (
-        <LibrariesListView
-          libraries={libraries}
-          onSelectLibrary={setSelectedIndex}
-          onCreateLibrary={handleCreateLibrary}
-        />
-      )}
+        {hasWallet ? (
+          hasLibraryFromChain && chainLibraryAsLibrary ? (
+            <LibraryView
+              library={chainLibraryAsLibrary}
+              onLibraryChange={() => refetch()}
+              onBackToLibraries={() => {}}
+            />
+          ) : (
+            <NoLibraryView
+              onCreateLibrary={handleCreateLibraryOnChain}
+              isChainMode={true}
+              isPending={isPending}
+              chainError={createError}
+            />
+          )
+        ) : localLibraries.length === 0 ? (
+          <NoLibraryView
+            onCreateLibrary={handleCreateFirstLibraryLocal}
+            isChainMode={false}
+          />
+        ) : selectedIndex !== null && selectedLibrary ? (
+          <LibraryView
+            library={selectedLibrary}
+            onLibraryChange={handleLibraryChange}
+            onBackToLibraries={() => setSelectedIndex(null)}
+          />
+        ) : (
+          <LibrariesListView
+            libraries={localLibraries}
+            onSelectLibrary={setSelectedIndex}
+            onCreateLibrary={handleCreateLibraryLocal}
+          />
+        )}
       </div>
     </div>
   );
