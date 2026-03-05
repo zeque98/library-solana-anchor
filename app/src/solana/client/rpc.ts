@@ -1,18 +1,16 @@
 import {
   type Connection,
   type PublicKey,
+  SystemProgram,
   TransactionInstruction,
 } from '@solana/web3.js';
 import { Buffer } from 'buffer';
 import { LIBRARY_PROGRAM_ID } from '../shared/constants';
 import type { Book, LibraryAccount } from '../shared/types';
+import { getProgram } from './program';
+import { deriveLibraryPDA } from './pda';
 
-// -----------------------------------------------------------------------------
-// Mock: program not initialized; builders return mock objects.
-// Replace with Anchor program.methods.* when integrating real client.
-// -----------------------------------------------------------------------------
-
-/** Minimal builder interface for mock; real impl returns Anchor MethodsBuilder. */
+/** Mock builder for instructions not yet implemented (add_book, remove_book, etc.). */
 interface MockMethodsBuilder {
   rpc(): Promise<string>;
   instruction(): Promise<TransactionInstruction>;
@@ -35,28 +33,38 @@ function mockBuilder(rpcSig = 'mock-signature'): MockMethodsBuilder {
 // ---------- create_library ----------
 
 export function createLibraryBuilder(
-  _owner: PublicKey,
+  owner: PublicKey,
   args: { name: string },
   _remainingAccounts: {
     pubkey: PublicKey;
     isSigner: boolean;
     isWritable: boolean;
   }[] = [],
-): MockMethodsBuilder {
-  void _owner;
-  void args;
-  return mockBuilder();
+) {
+  const prog = getProgram();
+  if (!prog)
+    throw new Error(
+      'Program not initialized. Call initializeClient(provider) first.',
+    );
+  const [library] = deriveLibraryPDA(owner);
+  return prog.methods
+    .createLibrary(args.name)
+    .accountsStrict({
+      owner,
+      library,
+      systemProgram: SystemProgram.programId,
+    })
+    .remainingAccounts(_remainingAccounts);
 }
 
 export async function createLibrarySendAndConfirm(
-  _owner: PublicKey,
+  owner: PublicKey,
   args: { name: string },
-  _preInstructions: TransactionInstruction[] = [],
+  preInstructions: TransactionInstruction[] = [],
 ): Promise<string> {
-  void _owner;
-  void args;
-  void _preInstructions;
-  return createLibraryBuilder(_owner, args).rpc();
+  return createLibraryBuilder(owner, args)
+    .preInstructions(preInstructions)
+    .rpc();
 }
 
 // ---------- add_book ----------
@@ -163,19 +171,29 @@ export async function toggleAvailabilitySendAndConfirm(
 export async function getLibrary(
   _connection: Connection,
   ownerPubkey: PublicKey,
-  _programId: PublicKey = LIBRARY_PROGRAM_ID,
 ): Promise<LibraryAccount | null> {
-  void _connection;
-  void _programId;
-  // Mock: return a fake library for the given owner.
-  const mockBooks: Book[] = [
-    { name: 'Mock Book', pages: 100, available: true },
-  ];
-  return {
-    owner: ownerPubkey,
-    name: 'Mock Library',
-    books: mockBooks,
-  };
+  const prog = getProgram();
+  if (!prog) return null;
+  const [libraryPda] = deriveLibraryPDA(ownerPubkey);
+  try {
+    const account = await (
+      prog.account as {
+        library?: {
+          fetch: (
+            addr: PublicKey,
+          ) => Promise<{ owner: PublicKey; name: string; books: Book[] }>;
+        };
+      }
+    ).library?.fetch(libraryPda);
+    if (!account) return null;
+    return {
+      owner: account.owner,
+      name: account.name,
+      books: account.books,
+    };
+  } catch {
+    return null;
+  }
 }
 
 /**
