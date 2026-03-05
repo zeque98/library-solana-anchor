@@ -28,7 +28,12 @@ export function SolanaProvider({ children }: SolanaProviderProps) {
   const network = WalletAdapterNetwork.Devnet;
   const endpoint = useMemo(() => {
     const env = import.meta.env.VITE_SOLANA_RPC_URL;
-    return env ?? clusterApiUrl(network);
+    if (env) return env;
+
+    // In dev (e.g. pnpm dev), default to local validator so "Program deployed" matches anchor deploy
+    if (import.meta.env.DEV) return 'http://127.0.0.1:8899';
+
+    return clusterApiUrl(network);
   }, [network]);
 
   const wallets = useMemo(
